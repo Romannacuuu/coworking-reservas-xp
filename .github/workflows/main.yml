@@ -1,0 +1,37 @@
+name: Integración continua
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificar:
+    name: Linter, TypeScript y Cucumber
+    runs-on: ubuntu-latest
+    env:
+      TOKEN_SECRET: ci-secret
+      BCRYPT_ROUNDS: '8'
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar el linter
+        run: npm run lint
+
+      - name: Comprobar tipos
+        run: npm run typecheck
+
+      - name: Compilar TypeScript
+        run: npm run build
+
+      - name: Ejecutar la suite BDD
+        run: npm run test:e2e
