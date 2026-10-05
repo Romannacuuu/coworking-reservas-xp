@@ -4,27 +4,71 @@ Sistema para gestionar las reservas de un espacio de coworking. Una persona se r
 
 Backend en TypeScript (modo estricto) y Express. Las pruebas de comportamiento están en Cucumber. Los datos viven en memoria.
 
+Este archivo separa dos entregas: **lo que ya estaba hecho** y **lo nuevo de la Unidad 4** (seguridad, autenticación y autorización).
+
 ## Cómo ejecutarlo
 
-Hace falta Node.js 20 o superior.
+Hace falta Node.js 20 o superior. Abrí una terminal en la carpeta del proyecto (`Proyecto integrador profe narciso`). En Cursor: Terminal → New Terminal. Los comandos de abajo sirven en PowerShell y en bash.
+
+### 1. Instalar dependencias
+
+Una sola vez, o de nuevo cuando cambie `package.json`:
 
 ```bash
 npm install
+```
+
+### 2. Levantar la app
+
+```bash
 npm run dev
 ```
 
-`http://localhost:3000` muestra la portada. La API está en `/api`.
+Dejá esa terminal abierta. Cuando aparezca `API de reservas escuchando en http://localhost:3000`, entrá a esa dirección en el navegador. La portada lista las rutas. La API está en `/api`.
 
-Al arrancar hay tres espacios: Sala A (100 créditos), Sala B (80) y Escritorio 1 (40). Cada cuenta nueva empieza con 300 créditos.
+Al arrancar hay tres espacios: Sala A (100 créditos), Sala B (80) y Escritorio 1 (40). Cada cuenta nueva empieza con 300 créditos y el rol `USUARIO`.
+
+Para frenarla, en esa misma terminal: `Ctrl+C`.
+
+La versión compilada, si la querés en vez de `npm run dev`:
 
 ```bash
 npm run build
 npm start
 ```
 
-Variables opcionales: `PORT` (3000), `TOKEN_SECRET` y `BCRYPT_ROUNDS` (8).
+Variables de la entrega anterior: `PORT` (3000), `TOKEN_SECRET` y `BCRYPT_ROUNDS` (8). Las variables nuevas están en la Unidad 4, más abajo. El modelo está en `.env.example`.
 
-## Historias
+### 3. Correr los tests
+
+Los tests no necesitan que la app esté levantada. Cucumber arma una aplicación nueva por escenario. Podés usar otra terminal, o frenar `npm run dev` antes.
+
+Solo Cucumber (historias de usuario, las 11 features):
+
+```bash
+npm run test:e2e
+```
+
+Tiene que terminar así:
+
+```text
+62 scenarios (62 passed)
+387 steps (387 passed)
+```
+
+Verificación completa, la misma que corre GitHub Actions (linter, tipos, compilación y Cucumber):
+
+```bash
+npm run verificar
+```
+
+---
+
+## Ya estaba hecho
+
+Registro, inicio de sesión, disponibilidad, reserva, cancelación, listado propio, bcrypt con sal y el umbral de 200 ms en las consultas. El catálogo seguía sembrado al arrancar. La persistencia entre reinicios sigue pendiente.
+
+### Historias
 
 | ID | Historia | Estado |
 | --- | --- | --- |
@@ -37,7 +81,6 @@ Variables opcionales: `PORT` (3000), `TOKEN_SECRET` y `BCRYPT_ROUNDS` (8).
 | HU-NF-01 | Contraseñas con bcrypt y sal | Hecho |
 | HU-NF-02 | Consultas en menos de 200 ms | Hecho |
 | HU-07 | Persistencia entre reinicios | Pendiente |
-| HU-08 | Publicar espacios por la API | Pendiente |
 
 **HU-01.** Como visitante, quiero registrarme con nombre, email y contraseña para acceder al sistema. La cuenta responde `201`, no devuelve la contraseña y empieza con 300 créditos. Email repetido: `409`. Contraseña corta, email inválido o nombre vacío: `400`.
 
@@ -55,15 +98,11 @@ Variables opcionales: `PORT` (3000), `TOKEN_SECRET` y `BCRYPT_ROUNDS` (8).
 
 **HU-NF-02.** Como administrador, quiero que las consultas respondan en menos de 200 ms. Lo cumplen `GET /api/salud` y `GET /api/espacios`. El registro queda fuera de ese umbral porque bcrypt consume CPU a propósito.
 
-**HU-07 y HU-08** quedan escritas y sin implementar. Hoy los datos se borran al frenar el servidor, y el catálogo de salas se siembra al arrancar.
+**HU-07** queda escrita y sin implementar. Hoy los datos se borran al frenar el servidor. La interfaz de repositorios es el punto por donde entraría una base más adelante.
 
-## Pruebas
+Publicar espacios por la API era HU-08 y estaba pendiente. Pasó a esta entrega, atada al rol `ADMIN`. Está en la sección nueva.
 
-```bash
-npm run test:e2e
-```
-
-Cucumber ejecuta cada `.feature` contra la API, sin levantar el servidor. Última corrida:
+### Pruebas de esa entrega
 
 ```text
 30 scenarios (30 passed)
@@ -80,20 +119,7 @@ Cucumber ejecuta cada `.feature` contra la API, sin levantar el servidor. Últim
 | `features/consulta-de-mis-reservas.feature` | Solo las propias, lista vacía y sin token |
 | `features/requisitos-no-funcionales.feature` | Hash bcrypt con sal y consultas en menos de 200 ms |
 
-Los pasos están en `tests/step_definitions/`. Cada escenario arma una aplicación nueva, así que uno no deja datos al siguiente.
-
-Verificación completa, la misma que corre GitHub Actions:
-
-```bash
-npm run lint
-npm run typecheck
-npm run build
-npm run test:e2e
-```
-
-`npm run verificar` ejecuta las cuatro.
-
-## API
+### API de esa entrega
 
 El campo de la contraseña es `contrasena`. Las rutas con token piden `Authorization: Bearer <token>`.
 
@@ -106,10 +132,100 @@ El campo de la contraseña es `contrasena`. Las rutas con token piden `Authoriza
 | `GET /api/espacios?fecha=2026-10-15` | token | Espacios con estado `Disponible` u `Ocupada` |
 | `POST /api/reservas` | token | Reserva `confirmada` y saldo restante |
 | `GET /api/reservas` | token | Solo las reservas de esa persona |
-| `POST /api/reservas/:id/cancelacion` | token | Reserva `cancelada` y saldo reintegrado |
+| `POST /api/reservas/:id/cancelacion` | token | Reserva `cancelada` y saldo reintegrado. Otra persona recibe `403` |
 
 Reservar la Sala A descuenta 100 créditos (de 300 a 200) y ese día figura `Ocupada`. Cancelarla devuelve el crédito y la sala queda `Disponible`.
 
-## Diseño
+---
 
-Controladores en `src/infraestructura/http`: traducen HTTP. Servicios en `src/aplicacion`: aplican las reglas. Repositorios en `src/infraestructura/persistencia`: guardan en memoria. El estado de una sala se calcula para la fecha pedida. Las contraseñas se hashean con bcrypt. El pipeline está en `.github/workflows/main.yml` y corre linter, tipos, compilación y Cucumber en cada push.
+## Lo nuevo: Unidad 4. Seguridad, autenticación y autorización
+
+Se sumó el patrón de access token y refresh token firmados como JWT (HS256), roles `USUARIO` y `ADMIN`, la comprobación de dueño del recurso, y el endurecimiento del borde HTTP: CORS con orígenes concretos, límite de intentos en el login y rechazo de entradas con operadores de inyección.
+
+El registro público no acepta `rol` ni `role`. Un administrador se crea por dentro del sistema (las pruebas lo hacen llamando al servicio). Así nadie se asciende solo mandando `ADMIN` en el body.
+
+El access token dura 15 minutos. El refresh token dura 7 días, se guarda en memoria y se rota: al renovar, el anterior deja de servir. Un JWT con `alg: none`, un token alterado o un refresh usado como access responden `401`.
+
+### Historias nuevas
+
+| ID | Historia | Estado |
+| --- | --- | --- |
+| HU-08 | Un administrador publica espacios | Hecho |
+| HU-09 | Access token, refresh token y vencimiento | Hecho |
+| HU-10 | Autorización por rol | Hecho |
+| HU-11 | El dueño (o un ADMIN) es quien toca la reserva | Hecho |
+| HU-12 | CORS, límite de login y entradas rechazadas | Hecho |
+
+**HU-08.** Como administrador, quiero publicar una sala o un escritorio por la API. `POST /api/espacios` con rol `ADMIN` responde `201`. Un `USUARIO` recibe `403`. Sin token, `401`. Nombre repetido: `409`.
+
+**HU-09.** Como usuario registrado, quiero un JWT de acceso corto y un refresh token para renovarlo. El login devuelve los dos. Si el access token ya venció, el perfil responde `401` (`token expirado`) y `POST /api/sesion/renovacion` entrega otro access token vigente. El refresh anterior queda invalidado.
+
+**HU-10.** Como sistema, quiero separar identidad y permisos. El JWT declara el rol. Publicar espacios exige `ADMIN`. Elegir el rol en el registro responde `400` y la cuenta no se crea.
+
+**HU-11.** Como usuario, quiero que otra persona no modifique mi reserva cambiando el id. `PATCH /api/reservas/:id` con una nota: el dueño recibe `200`, otro usuario `403`, un id inexistente `404`, y un `ADMIN` puede anotar la de cualquiera. `GET /api/usuarios/:id/reservas` sigue la misma regla. Cancelar la reserva de otro sigue en `403`, como en HU-05.
+
+**HU-12.** Como operador, quiero que el login no acepte fuerza bruta, que el navegador solo hable con orígenes de la lista y que un operador `$gt` o un byte nulo no entren al sistema. Al superar 5 intentos de login, la respuesta es `429` aunque la contraseña sea la correcta. El refresh no comparte ese cupo. Un origen de la lista vuelve en `Access-Control-Allow-Origin` (nunca `*`). Un origen ajeno recibe `403`.
+
+### Pruebas nuevas
+
+Son 32 escenarios más. Junto con los 30 anteriores, la suite queda en 62 escenarios y 387 pasos.
+
+| Archivo | Qué cubre |
+| --- | --- |
+| `features/renovacion-de-sesion.feature` | JWT, perfil sin token, token falso, algoritmo `none`, access vencido, renovación, rotación del refresh |
+| `features/autorizacion-por-rol.feature` | Usuario bloqueado al publicar, admin habilitado, nombre duplicado y rol rechazado en el registro |
+| `features/proteccion-de-recursos.feature` | Nota del dueño, IDOR de otro usuario, admin, reserva inexistente, listado ajeno y nota demasiado larga |
+| `features/endurecimiento-del-servidor.feature` | Fuerza bruta, refresh durante el bloqueo, CORS, NoSQL, SQL, byte nulo, campo extra y capacidad no numérica |
+
+### API nueva
+
+| Método y ruta | Auth | Respuesta |
+| --- | --- | --- |
+| `POST /api/sesion` | no, con límite | Ahora también devuelve `refreshToken`. Sigue devolviendo `token` |
+| `POST /api/sesion/renovacion` | refresh token | `{ "token", "refreshToken" }` nuevos. El refresh enviado queda revocado |
+| `POST /api/espacios` | `ADMIN` | Espacio creado |
+| `GET /api/usuarios/:id/reservas` | dueño o `ADMIN` | Reservas de esa persona. Otro usuario: `403` |
+| `PATCH /api/reservas/:id` | dueño o `ADMIN` | Reserva con `nota`. Otro usuario: `403` |
+
+El login y el perfil incluyen `rol`. La contraseña sigue sin salir en ninguna respuesta, y el JWT no la lleva adentro.
+
+### Variables nuevas
+
+| Variable | Defecto | Para qué |
+| --- | --- | --- |
+| `ACCESS_TOKEN_TTL_SECONDS` | `900` | Vida del access token |
+| `REFRESH_TOKEN_TTL_SECONDS` | `604800` | Vida del refresh token |
+| `LOGIN_MAX_INTENTOS` | `5` | Intentos de `POST /api/sesion` por IP |
+| `LOGIN_VENTANA_MS` | `900000` | Ventana de ese límite (15 minutos) |
+| `CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Orígenes permitidos. `*` hace fallar el arranque |
+
+### Cómo mostrarlo con cURL
+
+Las tres comprobaciones que pide la unidad también corren solas en Cucumber. Para verlas a mano, con el servidor en `http://localhost:3000` y un usuario ya registrado:
+
+Fuerza bruta. El sexto `POST /api/sesion` desde la misma máquina responde `429`, aunque a la sexta uses la contraseña correcta:
+
+```bash
+curl -s -X POST http://localhost:3000/api/sesion \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"juan@correo.com\",\"contrasena\":\"incorrecta1\"}"
+```
+
+Vencimiento. El escenario `Un access token vencido se rechaza y el refresh emite otro vigente` emite el access token ya vencido, el perfil responde `401` (`token expirado`) y, después de devolverle los 15 minutos de vida, `POST /api/sesion/renovacion` entrega uno nuevo. A mano, con un refresh obtenido en el login:
+
+```bash
+curl -s -X POST http://localhost:3000/api/sesion/renovacion \
+  -H "Content-Type: application/json" \
+  -d "{\"refreshToken\":\"EL-REFRESH\"}"
+```
+
+Recurso ajeno. Con el token de Ana y el id de una reserva de Juan:
+
+```bash
+curl -s -X PATCH http://localhost:3000/api/reservas/ID-DE-JUAN \
+  -H "Authorization: Bearer TOKEN-DE-ANA" \
+  -H "Content-Type: application/json" \
+  -d "{\"nota\":\"hack\"}"
+```
+
+La respuesta es `403` y la nota de Juan no cambia.

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { ServicioUsuarios } from '../../../aplicacion/servicios/servicioUsuarios';
-import { adaptar, exigirTexto } from '../http';
+import { ErrorDeAplicacion } from '../../../dominio/errores';
+import { adaptar, exigirCampos, exigirTexto } from '../http';
 import { requerirAuth, usuarioAutenticado } from '../autenticacion';
 import { EmisorDeTokens } from '../../../aplicacion/puertos';
 
@@ -10,7 +11,10 @@ export function rutasUsuarios(usuarios: ServicioUsuarios, tokens: EmisorDeTokens
   router.post(
     '/usuarios',
     adaptar(async (req, res) => {
-      const cuerpo = req.body as { nombre?: unknown; email?: unknown; contrasena?: unknown };
+      if (declaraRol(req.body)) {
+        throw new ErrorDeAplicacion('no se puede asignar un rol al registrarse', 400);
+      }
+      const cuerpo = exigirCampos(req.body, ['nombre', 'email', 'contrasena']);
       const creado = await usuarios.registrar({
         nombre: exigirTexto(cuerpo.nombre, 'nombre'),
         email: exigirTexto(cuerpo.email, 'email'),
@@ -29,4 +33,11 @@ export function rutasUsuarios(usuarios: ServicioUsuarios, tokens: EmisorDeTokens
   );
 
   return router;
+}
+
+function declaraRol(cuerpo: unknown): boolean {
+  if (!cuerpo || typeof cuerpo !== 'object' || Array.isArray(cuerpo)) {
+    return false;
+  }
+  return 'rol' in cuerpo || 'role' in cuerpo;
 }

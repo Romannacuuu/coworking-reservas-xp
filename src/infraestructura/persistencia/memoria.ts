@@ -1,5 +1,11 @@
 import { Espacio, Reserva, Usuario } from '../../dominio/entidades';
-import { RepositorioEspacios, RepositorioReservas, RepositorioUsuarios } from '../../aplicacion/puertos';
+import {
+  RepositorioEspacios,
+  RepositorioReservas,
+  RepositorioSesiones,
+  RepositorioUsuarios,
+  SesionRenovacion,
+} from '../../aplicacion/puertos';
 
 export class RepositorioUsuariosMemoria implements RepositorioUsuarios {
   private readonly datos = new Map<string, Usuario>();
@@ -72,5 +78,29 @@ export class RepositorioReservasMemoria implements RepositorioReservas {
   buscarPorId(id: string): Reserva | undefined {
     const reserva = this.datos.get(id);
     return reserva ? { ...reserva } : undefined;
+  }
+}
+
+export class RepositorioSesionesMemoria implements RepositorioSesiones {
+  private readonly datos = new Map<string, SesionRenovacion>();
+
+  guardar(sesion: SesionRenovacion): void {
+    this.datos.set(sesion.jti, { ...sesion });
+  }
+
+  buscar(jti: string): SesionRenovacion | undefined {
+    const sesion = this.datos.get(jti);
+    if (!sesion) {
+      return undefined;
+    }
+    if (sesion.venceEn * 1000 <= Date.now()) {
+      this.datos.delete(jti);
+      return undefined;
+    }
+    return { ...sesion };
+  }
+
+  revocar(jti: string): void {
+    this.datos.delete(jti);
   }
 }

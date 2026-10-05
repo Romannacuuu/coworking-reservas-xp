@@ -4,6 +4,8 @@ Sistema para que una persona se registre, mire qué salas y escritorios están l
 
 Cada historia sigue el formato: **Como** rol, **quiero** acción, **para** beneficio. Una historia se considera terminada cuando pasan todos sus criterios de aceptación, automatizados en `features/`.
 
+## Ya estaba hecho
+
 | ID | Historia | Prioridad | Estado |
 | --- | --- | --- | --- |
 | HU-01 | Registro de usuario | Alta | Hecho |
@@ -15,9 +17,18 @@ Cada historia sigue el formato: **Como** rol, **quiero** acción, **para** benef
 | HU-NF-01 | Contraseñas con bcrypt y sal | Alta | Hecho |
 | HU-NF-02 | Consultas en menos de 200 ms | Media | Hecho |
 | HU-07 | El catálogo sobrevive a un reinicio | Baja | Pendiente |
-| HU-08 | Un administrador publica espacios por la API | Baja | Pendiente |
 
-HU-07 y HU-08 están escritas para no perderlas. No se implementaron: ninguna historia de esta entrega pide que los datos sobrevivan a un reinicio ni un rol de administrador.
+Las historias de arriba son la entrega anterior. HU-07 sigue pendiente: el repositorio es en memoria.
+
+## Unidad 4 — lo nuevo
+
+| ID | Historia | Prioridad | Estado |
+| --- | --- | --- | --- |
+| HU-08 | Un administrador publica espacios por la API | Alta | Hecho |
+| HU-09 | Access token, refresh token y vencimiento | Alta | Hecho |
+| HU-10 | Autorización por rol | Alta | Hecho |
+| HU-11 | Dueño o ADMIN sobre la reserva | Alta | Hecho |
+| HU-12 | CORS, límite de login y entradas rechazadas | Alta | Hecho |
 
 ## HU-01 — Registro de usuario
 
@@ -127,8 +138,67 @@ Feature: `features/requisitos-no-funcionales.feature`.
 
 No está implementada. Hoy el repositorio es en memoria. La interfaz `RepositorioUsuarios`, `RepositorioEspacios` y `RepositorioReservas` es el punto por donde entraría PostgreSQL más adelante, sin reescribir los servicios.
 
-## HU-08 — Catálogo administrable (pendiente)
+## HU-08 — Catálogo administrable
 
 **Como** administrador, **quiero** publicar una sala o un escritorio por la API, **para** actualizar el local sin tocar el código.
 
-No está implementada. Al levantar `npm run dev` el sistema siembra Sala A, Sala B y Escritorio 1. En las pruebas, el paso `Given que existe el espacio...` carga el catálogo llamando al servicio, porque crear espacios todavía no es una historia de usuario.
+Criterios de aceptación:
+
+- `POST /api/espacios` con rol `ADMIN` crea el espacio y responde `201`.
+- Un `USUARIO` recibe `403`. Sin token, `401`.
+- Si el nombre ya existe, la respuesta es `409`.
+
+Feature: `features/autorizacion-por-rol.feature`.
+
+Al levantar `npm run dev` el sistema sigue sembrando Sala A, Sala B y Escritorio 1. En las pruebas viejas, el paso `Given que existe el espacio...` carga el catálogo llamando al servicio.
+
+## HU-09 — Access token, refresh token y vencimiento
+
+**Como** usuario registrado, **quiero** un access token corto y un refresh token para renovarlo, **para** no quedar con una sesión que no se puede cortar.
+
+Criterios de aceptación:
+
+- El login responde `200` con un JWT HS256 (`token`) y un `refreshToken`.
+- Sin token, con un token alterado o con `alg: none`, el perfil responde `401`.
+- Un access token vencido responde `401` (`token expirado`). `POST /api/sesion/renovacion` devuelve un access token vigente.
+- Al renovar, el refresh anterior deja de servir. El access token no renueva, y el refresh token no abre rutas protegidas.
+
+Feature: `features/renovacion-de-sesion.feature`.
+
+## HU-10 — Autorización por rol
+
+**Como** sistema, **quiero** que el permiso no se mezcle con la identidad, **para** que un usuario común no publique espacios ni se asigne `ADMIN`.
+
+Criterios de aceptación:
+
+- El JWT y el perfil declaran `USUARIO` o `ADMIN`.
+- El registro que envía `rol` o `role` responde `400` y no crea la cuenta.
+
+Feature: `features/autorizacion-por-rol.feature`.
+
+## HU-11 — Dueño o ADMIN sobre la reserva
+
+**Como** usuario autenticado, **quiero** que solo yo, o un administrador, modifique mi reserva, **para** que cambiar el id en la URL no alcance.
+
+Criterios de aceptación:
+
+- `PATCH /api/reservas/:id` guarda la nota si quien llama es el dueño o un `ADMIN`.
+- Otra persona recibe `403` y la nota no cambia. Un id inexistente responde `404`.
+- `GET /api/usuarios/:id/reservas` sigue la misma regla.
+- Una nota de más de 200 caracteres responde `400`.
+
+Feature: `features/proteccion-de-recursos.feature`.
+
+## HU-12 — CORS, límite de login y entradas rechazadas
+
+**Como** operador, **quiero** acotar orígenes, intentos de login y el cuerpo de las peticiones, **para** frenar fuerza bruta e inyección en el borde.
+
+Criterios de aceptación:
+
+- Tras 5 intentos de `POST /api/sesion`, el siguiente responde `429` aunque la contraseña sea correcta.
+- Con el login bloqueado, el refresh token igual renueva la sesión.
+- Un origen de `CORS_ORIGINS` vuelve en `Access-Control-Allow-Origin`. Nunca es `*`. Un origen ajeno responde `403`.
+- Un operador `$gt`, un byte nulo o un campo no declarado responden `400`. Una cadena de inyección SQL en el email no inicia sesión (`401`).
+- Una capacidad que no es un entero responde `400`.
+
+Feature: `features/endurecimiento-del-servidor.feature`.

@@ -2,11 +2,27 @@ import { Router } from 'express';
 import { ServicioEspacios } from '../../../aplicacion/servicios/servicioEspacios';
 import { EmisorDeTokens } from '../../../aplicacion/puertos';
 import { ErrorDeAplicacion } from '../../../dominio/errores';
-import { adaptar } from '../http';
-import { requerirAuth } from '../autenticacion';
+import { adaptar, exigirCampos, exigirEntero, exigirTexto } from '../http';
+import { requerirAuth, requerirRol } from '../autenticacion';
 
 export function rutasEspacios(espacios: ServicioEspacios, tokens: EmisorDeTokens): Router {
   const router = Router();
+
+  router.post(
+    '/espacios',
+    requerirAuth(tokens),
+    requerirRol(['ADMIN']),
+    adaptar(async (req, res) => {
+      const cuerpo = exigirCampos(req.body, ['nombre', 'tipo', 'capacidad', 'precioPorDia']);
+      const espacio = espacios.registrar({
+        nombre: exigirTexto(cuerpo.nombre, 'nombre'),
+        tipo: exigirTexto(cuerpo.tipo, 'tipo'),
+        capacidad: exigirEntero(cuerpo.capacidad, 'capacidad'),
+        precioPorDia: exigirEntero(cuerpo.precioPorDia, 'precio'),
+      });
+      res.status(201).json(espacio);
+    }),
+  );
 
   router.get(
     '/espacios',

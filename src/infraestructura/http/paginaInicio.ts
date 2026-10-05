@@ -27,10 +27,14 @@ export function htmlDeInicio(): string {
     <ul>
       <li><code>POST /api/usuarios</code> — registro</li>
       <li><code>POST /api/sesion</code> — inicio de sesión</li>
+      <li><code>POST /api/sesion/renovacion</code> — renovar el access token</li>
       <li><code>GET /api/usuarios/yo</code> — perfil y saldo</li>
       <li><code>GET /api/espacios?fecha=2026-10-15</code> — disponibilidad</li>
+      <li><code>POST /api/espacios</code> — publicar un espacio (solo ADMIN)</li>
       <li><code>POST /api/reservas</code> — reservar</li>
       <li><code>GET /api/reservas</code> — mis reservas</li>
+      <li><code>GET /api/usuarios/:id/reservas</code> — reservas de una persona (dueño o ADMIN)</li>
+      <li><code>PATCH /api/reservas/:id</code> — anotar una reserva (dueño o ADMIN)</li>
       <li><code>POST /api/reservas/:id/cancelacion</code> — cancelar</li>
     </ul>
     <p>Al arrancar hay tres espacios: Sala A (100), Sala B (80) y Escritorio 1 (40). Una cuenta nueva empieza con 300 créditos.</p>

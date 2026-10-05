@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { Reserva } from '../../dominio/entidades';
+import { Reserva, Rol } from '../../dominio/entidades';
 import { ErrorDeAplicacion } from '../../dominio/errores';
 import { afirmarFechaReservable, fechaDeHoy, hayReservaConfirmada } from '../../dominio/reglas';
 import { RepositorioEspacios, RepositorioReservas, RepositorioUsuarios } from '../puertos';
@@ -79,5 +79,34 @@ export class ServicioReservas {
 
   listarPropias(usuarioId: string): Reserva[] {
     return this.reservas.listar().filter((reserva) => reserva.usuarioId === usuarioId);
+  }
+
+  listarDe(usuarioId: string): Reserva[] {
+    if (!this.usuarios.buscarPorId(usuarioId)) {
+      throw new ErrorDeAplicacion('usuario no encontrado', 404);
+    }
+    return this.listarPropias(usuarioId);
+  }
+
+  obtener(reservaId: string): Reserva {
+    const reserva = this.reservas.buscarPorId(reservaId);
+    if (!reserva) {
+      throw new ErrorDeAplicacion('reserva no encontrada', 404);
+    }
+    return reserva;
+  }
+
+  anotar(actor: { id: string; rol: Rol }, reservaId: string, nota: string): Reserva {
+    const reserva = this.obtener(reservaId);
+    if (actor.rol !== 'ADMIN' && reserva.usuarioId !== actor.id) {
+      throw new ErrorDeAplicacion('no tienes permisos sobre este recurso', 403);
+    }
+    const texto = nota.trim();
+    if (texto.length > 200) {
+      throw new ErrorDeAplicacion('la nota es demasiado larga', 400);
+    }
+    const actualizada: Reserva = { ...reserva, nota: texto };
+    this.reservas.actualizar(actualizada);
+    return actualizada;
   }
 }

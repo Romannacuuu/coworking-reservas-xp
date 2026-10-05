@@ -9,6 +9,8 @@ interface CuentaEscenario {
   email: string;
   contrasena: string;
   token?: string;
+  refreshToken?: string;
+  refreshAnterior?: string;
 }
 
 export class MundoApi extends World {
@@ -47,6 +49,26 @@ export class MundoApi extends World {
     return this.aplicacion.servicios.espacios;
   }
 
+  get servicios(): Aplicacion['servicios'] {
+    return this.aplicacion.servicios;
+  }
+
+  get vigencia(): Aplicacion['vigencia'] {
+    return this.aplicacion.vigencia;
+  }
+
+  get origenPermitido(): string {
+    const origen = this.aplicacion.origenesPermitidos[0];
+    if (!origen) {
+      throw new Error('No hay orígenes permitidos configurados');
+    }
+    return origen;
+  }
+
+  get maximoLogin(): number {
+    return this.aplicacion.limiteLogin.maximo;
+  }
+
   recordarUsuario(nombre: string, email: string, contrasena: string, id: string): void {
     const previa = this.cuentas.get(nombre);
     this.cuentas.set(nombre, {
@@ -54,11 +76,41 @@ export class MundoApi extends World {
       email,
       contrasena,
       token: previa?.token,
+      refreshToken: previa?.refreshToken,
+      refreshAnterior: previa?.refreshAnterior,
     });
   }
 
-  guardarToken(nombre: string, token: string): void {
-    this.datosDe(nombre).token = token;
+  guardarSesion(nombre: string, token: string, refreshToken?: string): void {
+    const cuenta = this.datosDe(nombre);
+    cuenta.token = token;
+    if (refreshToken) {
+      cuenta.refreshToken = refreshToken;
+    }
+  }
+
+  marcarRefreshAnterior(nombre: string): void {
+    const cuenta = this.datosDe(nombre);
+    if (!cuenta.refreshToken) {
+      throw new Error(`"${nombre}" no tiene refresh token`);
+    }
+    cuenta.refreshAnterior = cuenta.refreshToken;
+  }
+
+  refreshDe(nombre: string): string {
+    const token = this.datosDe(nombre).refreshToken;
+    if (!token) {
+      throw new Error(`"${nombre}" no tiene refresh token`);
+    }
+    return token;
+  }
+
+  refreshAnteriorDe(nombre: string): string {
+    const token = this.datosDe(nombre).refreshAnterior;
+    if (!token) {
+      throw new Error(`"${nombre}" no tiene un refresh token anterior`);
+    }
+    return token;
   }
 
   tieneCuenta(nombre: string): boolean {

@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import { ServicioReservas } from '../../../aplicacion/servicios/servicioReservas';
 import { EmisorDeTokens } from '../../../aplicacion/puertos';
-import { adaptar, exigirTexto } from '../http';
-import { requerirAuth, usuarioAutenticado } from '../autenticacion';
+import { adaptar, exigirCampos, exigirTexto, exigirTextoPresente } from '../http';
+import {
+  exigirDuenoDeReserva,
+  exigirMismoUsuarioOAdmin,
+  requerirAuth,
+  rolAutenticado,
+  usuarioAutenticado,
+} from '../autenticacion';
 
 export function rutasReservas(reservas: ServicioReservas, tokens: EmisorDeTokens): Router {
   const router = Router();
@@ -28,6 +34,30 @@ export function rutasReservas(reservas: ServicioReservas, tokens: EmisorDeTokens
     adaptar(async (req, res) => {
       const reserva = reservas.cancelar(usuarioAutenticado(req), req.params.id);
       res.status(200).json(reserva);
+    }),
+  );
+
+  router.patch(
+    '/reservas/:id',
+    proteger,
+    exigirDuenoDeReserva((id) => reservas.obtener(id)),
+    adaptar(async (req, res) => {
+      const cuerpo = exigirCampos(req.body, ['nota']);
+      const actualizada = reservas.anotar(
+        { id: usuarioAutenticado(req), rol: rolAutenticado(req) },
+        req.params.id,
+        exigirTextoPresente(cuerpo.nota, 'nota'),
+      );
+      res.status(200).json(actualizada);
+    }),
+  );
+
+  router.get(
+    '/usuarios/:id/reservas',
+    proteger,
+    exigirMismoUsuarioOAdmin('id'),
+    adaptar(async (req, res) => {
+      res.status(200).json(reservas.listarDe(req.params.id));
     }),
   );
 

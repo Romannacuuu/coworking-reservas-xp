@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { Usuario, UsuarioPublico, publicarUsuario } from '../../dominio/entidades';
+import { Rol, Usuario, UsuarioPublico, publicarUsuario } from '../../dominio/entidades';
 import { ErrorDeAplicacion } from '../../dominio/errores';
 import { SALDO_INICIAL, validarRegistro } from '../../dominio/reglas';
 import { Cifrador, RepositorioUsuarios } from '../puertos';
@@ -10,11 +10,22 @@ export class ServicioUsuarios {
     private readonly cifrador: Cifrador,
   ) {}
 
-  async registrar(entrada: {
+  registrar(entrada: { nombre: string; email: string; contrasena: string }): Promise<UsuarioPublico> {
+    return this.crear(entrada, 'USUARIO');
+  }
+
+  registrarAdministrador(entrada: {
     nombre: string;
     email: string;
     contrasena: string;
   }): Promise<UsuarioPublico> {
+    return this.crear(entrada, 'ADMIN');
+  }
+
+  private async crear(
+    entrada: { nombre: string; email: string; contrasena: string },
+    rol: Rol,
+  ): Promise<UsuarioPublico> {
     const datos = validarRegistro(entrada);
     if (this.usuarios.buscarPorEmail(datos.email)) {
       throw new ErrorDeAplicacion('email ya registrado', 409);
@@ -26,6 +37,7 @@ export class ServicioUsuarios {
       email: datos.email,
       passwordHash: await this.cifrador.cifrar(entrada.contrasena),
       saldo: SALDO_INICIAL,
+      rol,
     };
     this.usuarios.guardar(usuario);
     return publicarUsuario(usuario);

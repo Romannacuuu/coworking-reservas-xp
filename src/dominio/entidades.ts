@@ -4,12 +4,15 @@ export type EstadoEspacio = 'Disponible' | 'Ocupada';
 
 export type EstadoReserva = 'confirmada' | 'cancelada';
 
+export type Rol = 'USUARIO' | 'ADMIN';
+
 export interface Usuario {
   id: string;
   nombre: string;
   email: string;
   passwordHash: string;
   saldo: number;
+  rol: Rol;
 }
 
 export interface UsuarioPublico {
@@ -17,6 +20,7 @@ export interface UsuarioPublico {
   nombre: string;
   email: string;
   saldo: number;
+  rol: Rol;
 }
 
 export interface Espacio {
@@ -39,6 +43,7 @@ export interface Reserva {
   fecha: string;
   estado: EstadoReserva;
   costo: number;
+  nota?: string;
 }
 
 export function publicarUsuario(usuario: Usuario): UsuarioPublico {
@@ -47,5 +52,6 @@ export function publicarUsuario(usuario: Usuario): UsuarioPublico {
     nombre: usuario.nombre,
     email: usuario.email,
     saldo: usuario.saldo,
+    rol: usuario.rol,
   };
 }

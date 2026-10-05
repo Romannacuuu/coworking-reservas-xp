@@ -21,8 +21,8 @@ Given('que {string} tiene una sesión activa', async function (this: MundoApi, n
     .post('/api/sesion')
     .send({ email: cuenta.email, contrasena: cuenta.contrasena });
   assert.equal(respuesta.status, 200, JSON.stringify(respuesta.body));
-  const cuerpo = respuesta.body as { token: string };
-  this.guardarToken(nombre, cuerpo.token);
+  const cuerpo = respuesta.body as { token: string; refreshToken?: string };
+  this.guardarSesion(nombre, cuerpo.token, cuerpo.refreshToken);
 });
 
 When(
@@ -41,11 +41,11 @@ When(
   async function (this: MundoApi, nombre: string, email: string, contrasena: string) {
     await this.medir(() => request(this.app).post('/api/sesion').send({ email, contrasena }));
     if (this.respuesta?.status === 200) {
-      const cuerpo = this.respuesta.body as { token: string; usuario: { id: string } };
+      const cuerpo = this.respuesta.body as { token: string; refreshToken?: string; usuario: { id: string } };
       if (!this.tieneCuenta(nombre)) {
         this.recordarUsuario(nombre, email, contrasena, cuerpo.usuario.id);
       }
-      this.guardarToken(nombre, cuerpo.token);
+      this.guardarSesion(nombre, cuerpo.token, cuerpo.refreshToken);
     }
   },
 );
