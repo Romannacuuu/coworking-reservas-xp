@@ -1,10 +1,32 @@
 # Reservas de coworking
 
-Sistema para gestionar las reservas de un espacio de coworking. Una persona se registra, inicia sesión, mira qué salas y escritorios están libres en una fecha, reserva con sus créditos y puede cancelar para recuperar el saldo.
-
-Backend en TypeScript (modo estricto) y Express. Las pruebas de comportamiento están en Cucumber. Los datos viven en memoria.
-
 Este archivo separa dos entregas: **lo que ya estaba hecho** y **lo nuevo de la Unidad 4** (seguridad, autenticación y autorización).
+
+## Para qué sirve el proyecto
+
+El sistema gestiona las reservas de un espacio de coworking. Una persona se registra, inicia sesión y consulta qué salas y escritorios están libres en una fecha. Si hay lugar y le alcanza el saldo, reserva: se descuenta el precio en créditos y ese día el espacio queda ocupado. Si cancela, recupera el saldo y el lugar vuelve a estar libre.
+
+Cada cuenta nueva empieza con 300 créditos y el rol `USUARIO`. Solo ve sus propias reservas. Un `ADMIN` puede publicar salas y escritorios y anotar la reserva de cualquier persona. El acceso usa un token corto (15 minutos) y un refresh token para renovarlo. El servidor limita los intentos de login, acepta solo orígenes de una lista y rechaza entradas con operadores de inyección.
+
+Los datos viven en memoria. Al frenar el servidor se pierden. La persistencia entre reinicios sigue pendiente.
+
+## Herramientas utilizadas
+
+| Herramienta | Para qué se usa |
+| --- | --- |
+| Node.js 20 | Ejecuta el servidor. Hace falta esa versión o una superior |
+| TypeScript | Lenguaje del backend, en modo estricto |
+| Express | Servidor HTTP y rutas de la API bajo `/api` |
+| HTML, CSS y JavaScript | Pantalla en `/` para registrarse, ver la disponibilidad, reservar y cancelar |
+| bcryptjs | Guarda las contraseñas con hash y sal. El texto plano no se almacena |
+| jsonwebtoken | Firma el access token y el refresh token (JWT, HS256) |
+| Cucumber | Pruebas de comportamiento a partir de las historias de usuario, en `features/` |
+| Supertest | Hace las llamadas HTTP de esas pruebas, sin levantar el servidor a mano |
+| ESLint | Revisa estilo y errores en `src` y `tests` |
+| ts-node | Arranca en desarrollo con `npm run dev`, sin compilar antes |
+| npm | Instala dependencias y corre los scripts (`dev`, `test:e2e`, `verificar`) |
+| GitHub Actions | En cada push corre linter, comprobación de tipos, compilación y Cucumber |
+| Persistencia en memoria | No hay base de datos. Usuarios, espacios, reservas y refresh tokens viven en mapas de JavaScript (`src/infraestructura/persistencia/memoria.ts`). Al frenar el servidor se borran. Conectar PostgreSQL es la historia pendiente HU-07 |
 
 ## Cómo ejecutarlo
 
@@ -24,7 +46,7 @@ npm install
 npm run dev
 ```
 
-Dejá esa terminal abierta. Cuando aparezca `API de reservas escuchando en http://localhost:3000`, entrá a esa dirección en el navegador. La portada lista las rutas. La API está en `/api`.
+Dejá esa terminal abierta. Cuando aparezca `API de reservas escuchando en http://localhost:3000`, entrá a esa dirección en el navegador. Ahí está la pantalla para registrarte, ver las salas libres y reservar. La API sigue en `/api`.
 
 Al arrancar hay tres espacios: Sala A (100 créditos), Sala B (80) y Escritorio 1 (40). Cada cuenta nueva empieza con 300 créditos y el rol `USUARIO`.
 

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reservas de coworking</title>
+  <link rel="stylesheet" href="/estilos.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="marca">Coworking</p>
+        <h1>Reservas</h1>
+        <p class="bajada">Elegí una sala o un escritorio libre y reservalo con tus créditos.</p>
+      </div>
+      <div id="cuenta" hidden>
+        <p id="quien"></p>
+        <p id="saldo"></p>
+        <button type="button" id="salir">Salir</button>
+      </div>
+    </header>
+
+    <p id="aviso" role="status" hidden></p>
+
+    <section id="acceso">
+      <form id="form-login">
+        <h2>Iniciar sesión</h2>
+        <label>Email <input type="email" name="email" autocomplete="username" required /></label>
+        <label>Contraseña <input type="password" name="contrasena" autocomplete="current-password" minlength="8" required /></label>
+        <button type="submit">Entrar</button>
+      </form>
+      <form id="form-registro">
+        <h2>Crear cuenta</h2>
+        <label>Nombre <input type="text" name="nombre" autocomplete="name" minlength="2" required /></label>
+        <label>Email <input type="email" name="email" autocomplete="email" required /></label>
+        <label>Contraseña <input type="password" name="contrasena" autocomplete="new-password" minlength="8" required /></label>
+        <button type="submit">Registrarme</button>
+        <p class="nota">La cuenta empieza con 300 créditos.</p>
+      </form>
+    </section>
+
+    <section id="panel" hidden>
+      <form id="form-fecha" class="fecha">
+        <label>Fecha <input type="date" id="fecha" name="fecha" required /></label>
+        <button type="submit">Ver disponibilidad</button>
+      </form>
+      <div id="espacios" class="lista"></div>
+      <h2>Mis reservas</h2>
+      <div id="reservas" class="lista"></div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

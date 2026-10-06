@@ -1,0 +1,163 @@
+:root {
+  color-scheme: light;
+  --papel: #f4f1ea;
+  --tinta: #1c1915;
+  --verde: #0f3d32;
+  --verde-suave: #e7f0eb;
+  --linea: #d9d2c5;
+  --aviso: #7a2e1b;
+  --aviso-fondo: #f8ebe6;
+  --ocupada: #8a4b2f;
+}
+
+* { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+main {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+h1, h2 { font-weight: normal; }
+h1 { font-size: 2.4rem; margin: 0; }
+h2 { font-size: 1.35rem; margin: 0 0 0.8rem; }
+
+.marca {
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--verde);
+}
+
+.bajada { margin: 0.4rem 0 0; line-height: 1.45; }
+
+#cuenta {
+  text-align: right;
+  min-width: 10rem;
+}
+
+#quien, #saldo { margin: 0 0 0.35rem; }
+#saldo { font-family: Consolas, monospace; }
+
+button, input {
+  font: inherit;
+  color: inherit;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+input {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--linea);
+  background: #fff;
+}
+
+button {
+  background: var(--verde);
+  color: #f4f1ea;
+  border: 0;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+#salir, .secundario {
+  background: transparent;
+  color: var(--verde);
+  border: 1px solid var(--verde);
+}
+
+#acceso {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+form, .tarjeta {
+  border: 1px solid var(--linea);
+  background: #fffdf8;
+  padding: 1rem;
+}
+
+.nota {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+}
+
+.fecha {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.fecha label { flex: 1; margin: 0; }
+
+.lista { display: grid; gap: 0.75rem; margin-bottom: 1.5rem; }
+
+.tarjeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.tarjeta h3 { margin: 0 0 0.25rem; font-size: 1.15rem; font-weight: normal; }
+.tarjeta p { margin: 0.15rem 0; }
+
+.estado {
+  font-family: Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.libre { color: var(--verde); }
+.ocupada, .cancelada { color: var(--ocupada); }
+
+#aviso {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--verde-suave);
+  color: var(--verde);
+}
+
+#aviso.error {
+  background: var(--aviso-fondo);
+  color: var(--aviso);
+}
+
+.vacio { margin: 0; }
+
+@media (max-width: 700px) {
+  #acceso, .tarjeta, header, .fecha { display: block; }
+  #cuenta { text-align: left; margin-top: 1rem; }
+  .tarjeta button, .fecha button { margin-top: 0.75rem; }
+}
