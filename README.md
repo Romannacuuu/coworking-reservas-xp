@@ -8,7 +8,41 @@ El sistema gestiona las reservas de un espacio de coworking. Una persona se regi
 
 Cada cuenta nueva empieza con 300 créditos y el rol `USUARIO`. Solo ve sus propias reservas. Un `ADMIN` puede publicar salas y escritorios y anotar la reserva de cualquier persona. El acceso usa un token corto (15 minutos) y un refresh token para renovarlo. El servidor limita los intentos de login, acepta solo orígenes de una lista y rechaza entradas con operadores de inyección.
 
-Los datos viven en memoria. Al frenar el servidor se pierden. La persistencia entre reinicios sigue pendiente.
+## Qué hay en cada parte
+
+| Parte | Para qué sirve |
+| --- | --- |
+| `public/` | La pantalla del navegador: registrarse, iniciar sesión, ver salas y reservar o cancelar |
+| `src/dominio/` | Las reglas del negocio: créditos, fechas, estados de una reserva, roles |
+| `src/aplicacion/` | Los servicios que registran, reservan y autorizan, sin saber si los datos están en memoria o en una base |
+| `src/infraestructura/` | Express, los tokens JWT, bcrypt y el guardado en memoria |
+| `features/` | Las historias de usuario, escritas en español, que describen el comportamiento esperado |
+| `tests/` | Los pasos que ejecutan esas historias contra la API |
+
+## Cómo funcionan los datos
+
+No hay base de datos. Usuarios, espacios, reservas, créditos y refresh tokens viven en mapas de JavaScript, en `src/infraestructura/persistencia/memoria.ts`. Nada se escribe en disco.
+
+Esos datos desaparecen siempre que el proceso se frena. `Ctrl+C`, cerrar la terminal o volver a correr `npm run dev` borra las cuentas y las reservas. Al arrancar de nuevo el sistema vuelve a crear solo esto:
+
+- Sala A (100 créditos), Sala B (80) y Escritorio 1 (40)
+- La cuenta de ejemplo `ana@correo.com` con contraseña `clave1234` y 300 créditos
+
+Mientras el servidor sigue abierto, lo que se registra o se reserva se mantiene. Dos navegadores contra el mismo `localhost:3000` ven los mismos datos. Guardar eso entre reinicios es la historia pendiente HU-07: más adelante entraría PostgreSQL por las interfaces de repositorio, sin reescribir los servicios.
+
+## Cómo funcionan los tests
+
+Las pruebas no usan el servidor de `npm run dev` ni la cuenta de Ana. Cada escenario arma una aplicación nueva, vacía, en memoria, y al terminar se descarta. Por eso un test no deja usuarios ni reservas para el siguiente, y tampoco los borra de la pantalla que tenés abierta.
+
+El texto está en `features/`, en formato Cucumber: **Given** el contexto, **When** la acción, **Then** el resultado. Un ejemplo es `features/inicio-de-sesion.feature`. Los pasos en español están implementados en `tests/step_definitions/` y llaman a la API con Supertest, adentro del mismo proceso. `cucumber.js` los carga con ts-node. Antes de cada escenario, `tests/support/hooks.ts` reinicia esa aplicación.
+
+```bash
+npm run test:e2e
+```
+
+Tiene que terminar en 62 escenarios y 387 pasos, todos pasados. No hace falta que la app esté levantada.
+
+`npm run verificar` es la revisión completa: linter, tipos, compilación y Cucumber. GitHub Actions corre lo mismo en cada push.
 
 ## Herramientas utilizadas
 
@@ -48,7 +82,7 @@ npm run dev
 
 Dejá esa terminal abierta. Cuando aparezca `API de reservas escuchando en http://localhost:3000`, entrá a esa dirección en el navegador. Ahí está la pantalla para registrarte, ver las salas libres y reservar. La API sigue en `/api`.
 
-Al arrancar hay tres espacios: Sala A (100 créditos), Sala B (80) y Escritorio 1 (40). Cada cuenta nueva empieza con 300 créditos y el rol `USUARIO`.
+Para probar sin crear una cuenta, en **Iniciar sesión** ya figuran `ana@correo.com` y `clave1234`. Tocá **Entrar**. Al arrancar también hay tres espacios: Sala A (100 créditos), Sala B (80) y Escritorio 1 (40). Cada cuenta nueva empieza con 300 créditos y el rol `USUARIO`. Si frenás el servidor, esas cuentas y las reservas desaparecen. El detalle está en **Cómo funcionan los datos**.
 
 Para frenarla, en esa misma terminal: `Ctrl+C`.
 
@@ -63,9 +97,7 @@ Variables de la entrega anterior: `PORT` (3000), `TOKEN_SECRET` y `BCRYPT_ROUNDS
 
 ### 3. Correr los tests
 
-Los tests no necesitan que la app esté levantada. Cucumber arma una aplicación nueva por escenario. Podés usar otra terminal, o frenar `npm run dev` antes.
-
-Solo Cucumber (historias de usuario, las 11 features):
+El mecanismo está en **Cómo funcionan los tests**. Podés usar otra terminal, o frenar `npm run dev` antes. Solo Cucumber (historias de usuario, las 11 features):
 
 ```bash
 npm run test:e2e
